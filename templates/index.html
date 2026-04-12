@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Friday AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #141c24;
+    --surface2: #1a2333;
+    --border:   rgba(255,255,255,0.07);
+    --accent:   #7c6cf5;
+    --accent2:  #4ecdc4;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --you-bg:   #1e2a3a;
+    --ai-bg:    #151e2b;
+    --glow:     rgba(124,108,245,0.18);
+    --red:      #f87171;
+    --red-glow: rgba(248,113,113,0.25);
+  }
+
+  html, body {
+    height: 100%; background: var(--bg);
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    overflow: hidden; user-select: none;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 55% at 70% 20%, rgba(20,80,80,0.45) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 20% 80%, rgba(20,50,80,0.3) 0%, transparent 70%),
+      linear-gradient(160deg, #0d1117 0%, #0a1520 100%);
+    pointer-events: none;
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    height: 100vh; max-width: 900px;
+    margin: 0 auto; padding: 0 24px;
+  }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0; flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700;
+    color: var(--text); letter-spacing: 0.01em;
+  }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .header-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  #messages {
+    flex: 1; overflow-y: auto; padding: 28px 0 16px;
+    display: flex; flex-direction: column; gap: 20px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+
+  .msg-row { display: flex; flex-direction: column; gap: 5px; animation: fadeUp 0.3s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg-label {
+    font-family: 'Syne', sans-serif; font-size: 0.67rem;
+    font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .msg-row.ai  .msg-label { color: var(--accent2); }
+  .msg-row.you .msg-label { color: var(--muted); text-align: right; }
+
+  .bubble {
+    padding: 16px 20px; border-radius: 16px;
+    border: 1px solid var(--border);
+    line-height: 1.65; font-size: 0.96rem; font-weight: 300;
+    max-width: 78%;
+  }
+  .msg-row.ai  .bubble { background: var(--ai-bg); align-self: flex-start; }
+  .msg-row.you .bubble {
+    background: var(--you-bg); align-self: flex-end;
+    border-color: rgba(124,108,245,0.2);
+  }
+  #interim-row { display: none; }
+  #interim-row .bubble { opacity: 0.5; font-style: italic; border-style: dashed; }
+
+  .typing-indicator { display: flex; gap: 5px; padding: 14px 20px; }
+  .typing-indicator span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted); animation: bounce 1.2s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.4; }
+    40%          { transform: translateY(-6px); opacity: 1; }
+  }
+
+  .control-panel {
+    flex-shrink: 0; padding: 20px 0 28px;
+    display: flex; flex-direction: column; align-items: center; gap: 18px;
+  }
+
+  #mic-orb {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #a78bfa, #7c6cf5);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 24px rgba(124,108,245,0.35);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    position: relative; overflow: visible;
+  }
+  #mic-orb svg { width: 28px; height: 28px; color: #fff; pointer-events: none; }
+
+  #mic-orb.listening {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    box-shadow: 0 4px 32px var(--red-glow);
+    animation: pulseListen 1s ease-in-out infinite;
+    transform: scale(1.1);
+  }
+  #mic-orb.ai-speaking {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    box-shadow: 0 4px 32px rgba(52,211,153,0.35);
+    animation: pulseSpeak 1.4s ease-in-out infinite;
+  }
+  #mic-orb.interrupted {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 4px 24px rgba(251,191,36,0.35);
+    animation: none; transform: scale(1);
+  }
+
+  @keyframes pulseListen {
+    0%,100% { box-shadow: 0 4px 24px var(--red-glow); }
+    50%      { box-shadow: 0 4px 40px rgba(248,113,113,0.6), 0 0 0 14px rgba(248,113,113,0.08); }
+  }
+  @keyframes pulseSpeak {
+    0%,100% { box-shadow: 0 4px 24px rgba(52,211,153,0.3); }
+    50%      { box-shadow: 0 4px 40px rgba(52,211,153,0.55), 0 0 0 14px rgba(52,211,153,0.07); }
+  }
+
+  .ring {
+    position: absolute; border-radius: 50%;
+    border: 2px solid rgba(248,113,113,0.35);
+    animation: ringOut 1.6s ease-out infinite;
+    pointer-events: none;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .ring:nth-child(2) { animation-delay: 0.53s; }
+  .ring:nth-child(3) { animation-delay: 1.06s; }
+  @keyframes ringOut {
+    0%   { width: 72px; height: 72px; opacity: 0.7; }
+    100% { width: 136px; height: 136px; opacity: 0; }
+  }
+
+  .key-hints { display: flex; gap: 28px; align-items: center; }
+  .hint { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
+  .key {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+    color: var(--text); letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .key.active-a {
+    background: var(--red); border-color: var(--red); color: #fff;
+    box-shadow: 0 0 12px var(--red-glow);
+  }
+  .key.active-w {
+    background: #f59e0b; border-color: #f59e0b; color: #fff;
+    box-shadow: 0 0 12px rgba(245,158,11,0.4);
+  }
+
+  #status {
+    font-size: 0.76rem; color: var(--muted);
+    min-height: 1.1rem; letter-spacing: 0.03em;
+    transition: color 0.2s;
+  }
+  #status.hot  { color: var(--red); }
+  #status.ai   { color: var(--accent2); }
+  #status.warn { color: #f59e0b; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      Friday AI
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" title="Profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="messages">
+    <div class="msg-row ai">
+      <span class="msg-label">Friday</span>
+      <div class="bubble">Hey! I'm Friday, your AI assistant. Hold <strong>A</strong> to speak or type below. What can I help you with?</div>
+    </div>
+    <div class="msg-row you" id="interim-row">
+      <span class="msg-label">You</span>
+      <div class="bubble" id="interim-text">…</div>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <!-- Text input fallback -->
+    <div style="display:flex; gap:8px; width:100%; max-width:600px;">
+      <input type="text" id="text-input" placeholder="Type a message…"
+        style="flex:1; padding:12px 18px; border-radius:14px; border:1px solid var(--border);
+        background:var(--surface); color:var(--text); font-family:'DM Sans',sans-serif;
+        font-size:0.95rem; outline:none; transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='rgba(124,108,245,0.5)'"
+        onblur="this.style.borderColor='var(--border)'" />
+      <button id="send-btn" style="padding:12px 20px; border-radius:14px; border:none;
+        background:linear-gradient(135deg,#a78bfa,#7c6cf5); color:#fff; font-family:'Syne',sans-serif;
+        font-weight:700; font-size:0.85rem; cursor:pointer; letter-spacing:0.05em;
+        transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseenter="this.style.transform='scale(1.05)'"
+        onmouseleave="this.style.transform='scale(1)'">Send</button>
+    </div>
+
+    <div id="mic-orb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="11" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8"  y1="22" x2="16" y2="22"/>
+      </svg>
+    </div>
+    <div class="key-hints">
+      <div class="hint"><span class="key" id="key-a">A</span><span>Hold to speak</span></div>
+    </div>
+    <div id="status">Hold <strong>A</strong> or Tap Mic to speak</div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG — Flask backend on same origin
+// ══════════════════════════════════════════
+const SPEAK_URL     = '/speak';
+const INTERRUPT_URL = '/interrupt';
+// ══════════════════════════════════════════
+
+const messagesEl  = document.getElementById('messages');
+const orbEl       = document.getElementById('mic-orb');
+const statusEl    = document.getElementById('status');
+const interimRow  = document.getElementById('interim-row');
+const interimText = document.getElementById('interim-text');
+const keyA        = document.getElementById('key-a');
+const keyW        = document.getElementById('key-w');
+const textInput   = document.getElementById('text-input');
+const sendBtn     = document.getElementById('send-btn');
+
+let isListening     = false;
+let aiSpeaking      = false;
+let aKeyDown        = false;
+let speakTimer      = null;
+let finalTranscript = '';
+let lastInterim     = '';
+let recognition     = null;
+let isSending       = false;
+
+function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+function setStatus(html, cls = '') {
+  statusEl.innerHTML = html;
+  statusEl.className = cls;
+}
+
+function addBubble(role, text) {
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+  const label = document.createElement('span');
+  label.className = 'msg-label';
+  label.textContent = role === 'ai' ? 'Friday' : 'You';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = text;
+  row.appendChild(label);
+  row.appendChild(bubble);
+  messagesEl.insertBefore(row, interimRow);
+  scrollBottom();
+}
+
+function showTyping() {
+  if (document.getElementById('typing-row')) return;
+  const row = document.createElement('div');
+  row.className = 'msg-row ai'; row.id = 'typing-row';
+  const label = document.createElement('span');
+  label.className = 'msg-label'; label.textContent = 'Friday';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble typing-indicator';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+  row.appendChild(label); row.appendChild(bubble);
+  messagesEl.insertBefore(row, interimRow);
+  scrollBottom();
+}
+function removeTyping() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+function addRings() {
+  removeRings();
+  for (let i = 0; i < 3; i++) {
+    const r = document.createElement('div');
+    r.className = 'ring';
+    orbEl.appendChild(r);
+  }
+}
+function removeRings() { orbEl.querySelectorAll('.ring').forEach(r => r.remove()); }
+
+// ── Speech Recognition setup ──
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+
+  recognition.onresult = e => {
+    let interim = '';
+    finalTranscript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      e.results[i].isFinal ? (finalTranscript += t) : (interim += t);
+    }
+    lastInterim = interim;
+    const live = finalTranscript || interim;
+    if (live) {
+      interimRow.style.display = 'flex';
+      interimText.textContent  = live;
+      scrollBottom();
+    }
+  };
+
+  recognition.onerror = err => {
+    console.warn('SR error:', err.error);
+    stopListening(false);
+    if (err.error !== 'aborted') {
+      setStatus('Mic unavailable — use the text box instead', 'warn');
+    }
+  };
+
+  recognition.onend = () => {
+    if (isListening) {
+      try { recognition.start(); } catch(_) {}
+    }
+  };
+} else {
+  setStatus('Speech not supported — use the text box below', 'warn');
+}
+
+function startListening() {
+  if (isListening) return;
+  if (aiSpeaking || isSending) doInterrupt();
+  isListening = true;
+  finalTranscript = '';
+  lastInterim = '';
+  interimRow.style.display = 'none';
+  interimText.textContent  = '…';
+  orbEl.className = 'listening';
+  keyA.classList.add('active-a');
+  addRings();
+  setStatus('Listening…', 'hot');
+  if (recognition) { try { recognition.start(); } catch(_) {} }
+}
+
+function stopListening(send = true) {
+  if (!isListening) return;
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(_) {} }
+  orbEl.className = '';
+  keyA.classList.remove('active-a');
+  removeRings();
+  interimRow.style.display = 'none';
+  
+  // Web Speech API drops unfinalized words if we manually stop(), so we grab whatever was in interim too!
+  let combinedText = finalTranscript;
+  if (lastInterim && !finalTranscript.endsWith(lastInterim)) {
+      combinedText += " " + lastInterim;
+  }
+  const text = combinedText.trim();
+  
+  finalTranscript = '';
+  lastInterim = '';
+  
+  if (send && text) {
+    addBubble('you', text);
+    sendToBackend(text, true); // true = audio input
+  } else {
+    setStatus('Hold <strong>A</strong> or Tap Mic to speak', '');
+  }
+}
+
+let currentFetchController = null;
+
+async function sendToBackend(text, isAudio = false) {
+  if (isSending || aiSpeaking) {
+    await doInterrupt();
+    // Wait briefly to allow backend lock to visually clear
+    await new Promise(r => setTimeout(r, 200));
+  }
+  isSending = true;
+  showTyping();
+  setStatus('Friday is thinking…', 'ai');
+  try {
+    currentFetchController = new AbortController();
+    const timeout = setTimeout(() => currentFetchController.abort(), 120000); // 2 min timeout
+
+    const res = await fetch(SPEAK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, is_audio: isAudio }),
+      signal: currentFetchController.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    removeTyping();
+    const reply = data.reply || data.response || data.message || '…';
+    addBubble('ai', reply);
+    
+    // Execute web automations on the client device!
+    if (data.action_urls && data.action_urls.length > 0) {
+      data.action_urls.forEach(url => {
+        window.open(url, '_blank');
+      });
+    }
+    
+    aiSpeaking = true;
+    orbEl.className = 'ai-speaking';
+    setStatus('Friday is speaking…', 'ai');
+    const ms = data.duration_ms || Math.max(2000, reply.length * 60);
+    clearTimeout(speakTimer);
+    speakTimer = setTimeout(() => { if (aiSpeaking) finishSpeaking(); }, ms);
+  } catch (err) {
+    removeTyping();
+    if (err.name === 'AbortError') {
+      // Aborted intentionally by interrupt, don't show error bubble
+    } else {
+      addBubble('ai', 'Connection issue: ' + err.message);
+      setStatus('Error — check backend', 'warn');
+    }
+  } finally {
+    isSending = false;
+  }
+}
+
+function finishSpeaking() {
+  clearTimeout(speakTimer);
+  aiSpeaking = false;
+  orbEl.className = '';
+  setStatus('Hold <strong>A</strong> or Tap Mic to speak', '');
+}
+
+async function doInterrupt() {
+  if (currentFetchController) currentFetchController.abort();
+  clearTimeout(speakTimer);
+  orbEl.className = 'interrupted';
+  setStatus('Interrupted', 'warn');
+  try { await fetch(INTERRUPT_URL, { method: 'POST' }); } catch(_) {}
+  setTimeout(() => {
+    if (!isListening && !aiSpeaking) finishSpeaking();
+  }, 300);
+}
+
+// ── Global Hotkey Polling ──
+// This allows the 'A' key to work even when the browser is minimized!
+let isPollingActive = false;
+async function pollGlobalHotkey() {
+  if (isPollingActive) return;
+  isPollingActive = true;
+  try {
+    const res = await fetch('/poll_hotkey');
+    if (res.ok) {
+      const data = await res.json();
+      // Ignore global hotkey if typing in the text box
+      if (document.activeElement !== textInput) {
+        if (data.a_pressed && !aKeyDown) {
+          aKeyDown = true;
+          startListening();
+        } else if (!data.a_pressed && aKeyDown) {
+          aKeyDown = false;
+          stopListening(true);
+        }
+      }
+    }
+  } catch(e) {}
+  isPollingActive = false;
+  setTimeout(pollGlobalHotkey, 150);
+}
+pollGlobalHotkey();
+
+// ── Text input handling ──
+function sendTextInput() {
+  const text = textInput.value.trim();
+  if (!text || isSending) return;
+  textInput.value = '';
+  addBubble('you', text);
+  sendToBackend(text, false);
+}
+
+sendBtn.addEventListener('click', sendTextInput);
+textInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendTextInput();
+  }
+});
+
+// ── Keyboard shortcuts (only when NOT focused on text input) ──
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (e.target === textInput) return; // Don't capture A/W when typing
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'KeyA') { aKeyDown = true; startListening(); }
+  if (e.code === 'KeyW') { doInterrupt(); }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.target === textInput) return;
+  if (e.code === 'KeyA') { aKeyDown = false; stopListening(true); }
+  if (e.code === 'KeyW') { keyW.classList.remove('active-w'); }
+});
+
+orbEl.addEventListener('click', e => {
+  e.preventDefault();
+  if (isListening) {
+    stopListening(true);
+  } else {
+    startListening();
+  }
+});
+
+// Interrupt backend if tab is closed or navigated away
+window.addEventListener('beforeunload', () => {
+  navigator.sendBeacon(INTERRUPT_URL);
+});
+</script>
+</body>
+</html>
