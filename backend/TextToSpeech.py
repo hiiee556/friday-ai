@@ -64,9 +64,9 @@ def TextToSpeech(Text):
         # Aggressively clean text to minimize pauses
         # Replace terminal punctuation with spaces or commas to keep the flow moving
         clean_text = Text.replace("*", "").replace("#", "").replace("`", "")
-        clean_text = clean_text.replace("...", " ").replace("..", " ")
-        clean_text = clean_text.replace(". ", " ").replace("! ", " ").replace("? ", " ")
-        clean_text = clean_text.replace(",", " ")  # Commas also cause pauses
+        clean_text = clean_text.replace("...", ",").replace("..", ",")
+        clean_text = clean_text.replace(". ", ", ").replace("! ", ", ").replace("? ", ", ")
+        # Keep commas to prevent edge-tts connection drop on huge text lengths
         clean_text = clean_text.replace("assistant", "").replace("friday", "").strip()
         
         try:

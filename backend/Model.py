@@ -142,6 +142,9 @@ def FirstLayerDMM(prompt: str = "test"):
         matched = False
         for func in funcs:
             if task.lower().startswith(func):
+                clean_task = task.lower().replace(func, "").strip()
+                if not clean_task:
+                    task = f"{func} {prompt}"
                 temp.append(task)
                 matched = True
                 break

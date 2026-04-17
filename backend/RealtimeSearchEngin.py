@@ -113,10 +113,10 @@ def RealtimeSearchEngine(prompt):
         # Format search context prominently
         search_context = f"REAL-TIME SEARCH RESULTS (As of {Information()}):\n{search_data}\n\nIMPORTANT: Use the above search results to provide a current and factual answer."
         
+        combined_system_prompt = System + "\n" + search_context
         messages_to_send = [
-            {"role": "system", "content": System},
+            {"role": "system", "content": combined_system_prompt},
         ] + messages[-5:] + [
-            {"role": "system", "content": search_context},
             {"role": "user", "content": prompt}
         ]
 

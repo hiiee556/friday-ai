@@ -53,9 +53,8 @@ def ChatBot(Query):
         with open("Data\\ChatLog.json", "r") as f:
             messages = load(f)
 
-        messages_to_send = SystemChatBot + [
-            {"role": "system", "content": RealtimeInformation()}
-        ] + messages[-5:] + [{"role": "user", "content": Query}]
+        combined_system_prompt = SystemChatBot[0]["content"] + "\n" + RealtimeInformation()
+        messages_to_send = [{"role": "system", "content": combined_system_prompt}] + messages[-5:] + [{"role": "user", "content": Query}]
 
         Answer = ""
 

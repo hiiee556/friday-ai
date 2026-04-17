@@ -21,6 +21,8 @@ def AnswerModifier(Answer):
 
 def QueryModifier(Query):
     new_query = Query.lower().strip()
+    if not new_query:
+        return ""
     query_words = new_query.split()
     question_words = ["how", "what", "who", "where", "when", "why", "which", "whose", "whom", "can you", "what's", "where's", "how's"]
 

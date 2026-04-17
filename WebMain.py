@@ -377,11 +377,12 @@ def speak():
         is_audio = data.get("is_audio", True)
         if is_audio and not _interrupt_flag.is_set():
             # Pass the WHOLE reply to TTS at once.
-            # Strip all punctuation and extra whitespace for truly ZERO-GAP speech.
+            # Replace terminal punctuation with commas instead of entirely stripping, 
+            # to prevent edge-tts from failing on massive unbroken strings while keeping pauses minimal.
             tts_text = re.sub(r'<[^>]+>', '', full_reply).strip()
-            # Remove all punctuation that causes pauses
-            for char in ".,!?;:-":
-                tts_text = tts_text.replace(char, "")
+            tts_text = tts_text.replace(".", ",").replace("!", ",").replace("?", ",")
+            tts_text = tts_text.replace(";", ",").replace(":", ",")
+            tts_text = tts_text.replace("-", " ")
             # Collapse extra spaces
             tts_text = re.sub(r'\s+', ' ', tts_text).strip()
             
