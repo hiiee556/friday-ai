@@ -10,3 +10,4 @@ edge-tts
 duckduckgo-search
 pillow
 flask
+psutil
