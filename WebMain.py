@@ -1,17 +1,22 @@
 """
 WebMain.py — Flask web server that connects the Friday AI frontend
-to the existing Friday AI backend (Model, Chatbot, RealtimeSearchEngine).
-Cloud deployment compatible (Render/Railway).
+to the existing Friday AI backend (Model, Chatbot, RealtimeSearchEngine,
+Automation, TextToSpeech).
+
+Run with:  python3.13 WebMain.py
+Then open: http://localhost:8000
 """
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from dotenv import dotenv_values
+from queue import Queue
 import threading
 import sys
 import os
 import re
 import io
 import time
+import psutil
 import traceback
 
 # ── Force UTF-8 ──────────────────────────────────────────────────────────────
@@ -20,33 +25,47 @@ if sys.stdout.encoding != 'utf-8':
 
 # ── Environment ──────────────────────────────────────────────────────────────
 env_vars = dotenv_values(".env")
-Username      = os.environ.get("Username") or env_vars.get("Username", "User")
-Assistantname = os.environ.get("Assistantname") or env_vars.get("Assistantname", "Friday")
+Username      = env_vars.get("Username", "User")
+Assistantname = env_vars.get("Assistantname", "Friday")
 
-# ── File-based status helpers ────────────────────────────────────────────────
-current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
+# ── File-based status helpers (shared with TTS/backend) ──────────────────────
+current_dir = os.getcwd()
 TempDirPath = os.path.join(current_dir, "Frontend", "Files")
 
+# Ensure directories exist
 os.makedirs(TempDirPath, exist_ok=True)
 os.makedirs(os.path.join(current_dir, "Data"), exist_ok=True)
 
 def _write(filename, content):
+    """Write content to a file in the TempDir."""
     with open(os.path.join(TempDirPath, filename), "w", encoding="utf-8") as f:
         f.write(content)
 
+
 def _read(filename, default=""):
+    """Read content from a file in the TempDir."""
     try:
         with open(os.path.join(TempDirPath, filename), "r", encoding="utf-8") as f:
             return f.read().strip()
     except (FileNotFoundError, IOError):
         return default
 
+
 def set_stop_status(s):
+    """Update stop status."""
     _write("Stop.data", s)
 
+
 def get_stop_status():
+    """Retrieve stop status."""
     return _read("Stop.data", "False")
 
+
+def set_assistant_status(s):
+    """Update assistant status."""
+    _write("Status.data", s)
+
+# ── Initialize data files ────────────────────────────────────────────────────
 for fname, default in [("Mic.data", "True"), ("Stop.data", "False"),
                        ("Status.data", "Ready"), ("Responses.data", "")]:
     path = os.path.join(TempDirPath, fname)
@@ -58,44 +77,34 @@ if not os.path.exists(chatlog):
     with open(chatlog, "w") as f:
         f.write("[]")
 
+# ── Monkey-patch keyboard.is_pressed to prevent crashes in web context ───────
+# The backend modules (Chatbot.py, RealtimeSearchEngin.py) call keyboard.is_pressed('w')
+# inside their generators. In a web server, this can crash or behave unexpectedly.
+# We replace it with a function that checks our interrupt flag instead.
+import keyboard as _real_keyboard
 
-# ── Interrupt Flag (Web Safe) ────────────────────────────────────────────────
 _interrupt_flag = threading.Event()
+_original_is_pressed = _real_keyboard.is_pressed
 
-# ── Mock OS Hardware Modules (Keyboard) to Prevent Cloud Crashes ─────────────
-# We mock the keyboard module here to inject it into sys.modules. 
-# This prevents backend systems like AppOpener/Chatbot from crashing
-# on server startup where no OS input devices/hook system exist.
-class MockKeyboard:
-    def is_pressed(self, key):
-        if key == 'w':
-            return _interrupt_flag.is_set()
+def _patched_is_pressed(key):
+    """Check our web interrupt flag instead of actual keyboard state."""
+    if key == 'w':
+        return _interrupt_flag.is_set()
+    try:
+        return _original_is_pressed(key)
+    except Exception:
         return False
 
-# Override before backend imports
-sys.modules['keyboard'] = MockKeyboard()
 
-# ── NOW import the backend modules safely ────────────────────────────────────
+_real_keyboard.is_pressed = _patched_is_pressed
+
+# ── NOW import the backend modules (after monkey-patching keyboard) ──────────
 from backend.Model import FirstLayerDMM
 from backend.RealtimeSearchEngin import RealtimeSearchEngine
+from backend.Automation import WEBSITE_SHORTCUTS, _is_url, _ensure_scheme
 from backend.Chatbot import ChatBot
+from backend.TextToSpeech import TextToSpeech
 from backend.ImageGeneration import GenerateImages
-
-# Re-implement URL helpers inline to avoid importing Automation.py (Desktop/OS-heavy)
-WEBSITE_SHORTCUTS = {
-    "youtube": "https://www.youtube.com",
-    "google": "https://www.google.com",
-    "facebook": "https://www.facebook.com",
-    "github": "https://github.com",
-}
-
-def _is_url(text):
-    return "." in text and not " " in text
-
-def _ensure_scheme(url):
-    if not url.startswith("http://") and not url.startswith("https://"):
-        return "https://" + url
-    return url
 
 # ── Query modifier ───────────────────────────────────────────────────────────
 def QueryModifier(Query):
@@ -118,6 +127,27 @@ def QueryModifier(Query):
             new_query += "."
     return new_query.capitalize()
 
+# ── TTS queue ────────────────────────────────────────────────────────────────
+TTS_Queue = Queue()
+
+def tts_worker():
+    """Background worker for TTS playback."""
+    while True:
+        try:
+            text = TTS_Queue.get()
+            if text and get_stop_status() == "False" and not _interrupt_flag.is_set():
+                TextToSpeech(text)
+            TTS_Queue.task_done()
+        except Exception as e:
+            print(f"[tts_worker] Error: {e}")
+            time.sleep(0.5)
+
+
+threading.Thread(target=tts_worker, daemon=True).start()
+
+# Remove lock to prevent "Heavily Processing" errors
+# _processing_lock = threading.Lock()
+
 # ── Flask app ────────────────────────────────────────────────────────────────
 app = Flask(__name__, template_folder="templates")
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -125,22 +155,33 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 @app.route("/")
 def index():
+    # no_cache headers so browser always gets fresh HTML
     response = app.make_response(render_template("index.html"))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
 
+
 @app.route("/Data/<path:filename>")
 @app.route("/data/<path:filename>")
 def serve_data(filename):
+    # Ensure we use the correct absolute path to the Data folder
     data_folder = os.path.join(current_dir, "Data")
     return send_from_directory(data_folder, filename)
 
 @app.route("/poll_hotkey")
 def get_hotkey():
-    # Hardware/Keyboard hooks disabled in cloud mode
-    return jsonify(a_pressed=False)
+    try:
+        a_pressed = _original_is_pressed('caps lock')
+        w_pressed = _original_is_pressed('w')
+        # If 'w' is physically pressed off-screen, trigger interrupt globally format
+        if w_pressed:
+            _interrupt_flag.set()
+            set_stop_status("True")
+        return jsonify(a_pressed=a_pressed)
+    except Exception:
+        return jsonify(a_pressed=False)
 
 # ── POST /speak ──────────────────────────────────────────────────────────────
 @app.route("/speak", methods=["POST"])
@@ -150,13 +191,21 @@ def speak():
     if not user_text:
         return jsonify(reply="I didn't catch that.", duration_ms=1500), 200
 
+    # Clear any previous interrupt and ensure we have a fresh start
     _interrupt_flag.clear()
     set_stop_status("False")
 
+    # Flush any queued TTS from a previous request immediately
+    while not TTS_Queue.empty():
+        try: TTS_Queue.get_nowait()
+        except: break
+
     try:
+
         print(f"\n{'─'*50}")
         print(f"[WebMain] User: {user_text}")
 
+        # ── 1. Decision layer ────────────────────────────────────────────
         try:
             Decision = FirstLayerDMM(user_text)
         except Exception as e:
@@ -172,13 +221,17 @@ def speak():
             if _interrupt_flag.is_set():
                 break
 
+            # ── Image generation ─────────────────────────────────────────
             if "generate image" in task:
                 prompt = task.replace("generate image", "").strip()
                 full_reply += f"Here are the images for '{prompt}': "
                 try:
+                    img_data_path = os.path.join(current_dir, "Frontend", "Files", "ImageGeneration.data")
+                    # Clear any old results
                     resp_path = os.path.join(current_dir, "Frontend", "Files", "Responses.data")
                     if os.path.exists(resp_path): os.remove(resp_path)
                     
+                    # Direct call is much faster than subprocess
                     GenerateImages(prompt)
                     
                     if os.path.exists(resp_path):
@@ -191,9 +244,11 @@ def speak():
                             
                             if idx != -1:
                                 rel_path = abs_img[idx:].replace("\\", "/") # e.g., "Data/img.jpg"
+                                # Add timestamp to bust browser cache
                                 ts = int(time.time())
                                 full_reply += f" I would be absolutely delighted to show you the images I've generated for '{prompt}'! I've put a lot of effort into making them perfect for you. I truly hope they capture exactly what you were imagining! <br><img src='/{rel_path}?v={ts}' style='max-width:100%; max-height: 450px; border-radius:15px; margin-top:15px; border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display:block;' /> "
                             else:
+                                # Fallback if Data folder isn't found in path
                                 filename = os.path.basename(abs_img)
                                 ts = int(time.time())
                                 full_reply += f" I have successfully generated the images for you, {Username}! <br><img src='/Data/{filename}?v={ts}' style='max-width:100%; max-height: 450px; border-radius:15px; margin-top:15px; border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display:block;' /> "
@@ -204,18 +259,21 @@ def speak():
                 except Exception as e:
                     full_reply += f" I am so sorry, {Username}, but I ran into a tiny snag while creating your images: {e}. "
 
+            # ── Browser-Oriented Automation ──────────────────────────
             elif any(task.startswith(func) for func in ["open", "play", "google search", "youtube search"]):
                 target = ""
                 url = ""
                 
                 if task.startswith("open "):
                     target = task.replace("open ", "").strip()
+                    # Check if it's a known website or looks like a URL
                     if target.lower() in WEBSITE_SHORTCUTS:
                         url = WEBSITE_SHORTCUTS[target.lower()]
                     elif _is_url(target):
                         url = _ensure_scheme(target)
                     else:
-                        url = f"https://www.google.com/search?q={target}&btnI=1" 
+                        # If it's not a clear website, we treat it as a "search and open"
+                        url = f"https://www.google.com/search?q={target}&btnI=1" # "I'm feeling lucky"
                 
                 elif task.startswith("google search "):
                     target = task.replace("google search ", "").strip()
@@ -227,17 +285,20 @@ def speak():
                 
                 elif task.startswith("play "):
                     target = task.replace("play ", "").strip()
+                    # Use YouTube search for 'play' in web version
                     url = f"https://www.youtube.com/results?search_query={target}"
 
                 if url:
                     action_urls.append(url)
                     full_reply += f" Opening {target or 'requested page'} in your browser. "
                 else:
-                    full_reply += " I can only open websites and searches directly. "
+                    full_reply += " I can only open websites and searches in the web version. "
 
+            # ── System tasks (Ignored in Web Version) ────────────────────
             elif any(task.startswith(func) for func in ["close", "system", "reminder"]):
-                full_reply += f" (System task '{task.split()[0]}' is disabled in the web version for security.) "
+                full_reply += f" (System task '{task.split()[0]}' is disabled in the web version to focus on your browser.) "
 
+            # ── Realtime search, general chat, or content (writing/code) ──────
             elif any(tag in task for tag in ["realtime", "general", "content"]):
                 clean_query = task.replace("realtime", "").replace("general", "").replace("content", "").strip()
                 modified_query = QueryModifier(clean_query)
@@ -246,9 +307,11 @@ def speak():
                     print(f"[WebMain] → RealtimeSearchEngine: {modified_query}")
                     generator = RealtimeSearchEngine(modified_query)
                 else:
+                    # ChatBot handles both general and content/code
                     print(f"[WebMain] → ChatBot: {modified_query}")
                     generator = ChatBot(modified_query)
 
+                # Consume the streaming generator to get the final answer
                 answer = ""
                 try:
                     for chunk in generator:
@@ -261,6 +324,8 @@ def speak():
                     if not answer:
                         answer = f"Sorry, I encountered an error: {e}"
 
+                # ── Format Code Blocks for the Web UI ──
+                # Convert ```lang ... ``` into a styled div with a copy button
                 def format_code_blocks(text):
                     code_regex = re.compile(r'```(\w+)?\s*\n(.*?)\n```', re.DOTALL)
                     
@@ -268,6 +333,7 @@ def speak():
                         lang = match.group(1) or "code"
                         code = match.group(2).replace('<', '&lt;').replace('>', '&gt;')
                         block_id = f"code-{int(time.time() * 1000)}"
+                        # Constructing HTML without leading indentation spaces to ensure proper alignment
                         html = (
                             f'<div class="code-container">'
                             f'<div class="code-header">'
@@ -280,11 +346,16 @@ def speak():
                         )
                         return html
                     
+                    # First, extract and format code blocks
                     formatted_text = code_regex.sub(replace_code, text)
+                    
+                    # If it's NOT a code block, preserve line breaks for proper alignment
+                    # We split by our added tags to avoid double-processing the code content
                     parts = re.split(r'(<div class="code-container">.*?</div>)', formatted_text, flags=re.DOTALL)
                     final_parts = []
                     for p in parts:
                         if not p.startswith('<div class="code-container">'):
+                            # Process only the text parts
                             final_parts.append(p.replace('\n', '<br>'))
                         else:
                             final_parts.append(p)
@@ -293,6 +364,7 @@ def speak():
 
                 full_reply += format_code_blocks(answer)
 
+            # ── Exit ─────────────────────────────────────────────────────
             elif "exit" in task:
                 full_reply += "Goodbye!"
 
@@ -300,6 +372,21 @@ def speak():
             full_reply = f"I am so sorry, {Username}, but I missed that! I would be absolutely delighted if you could repeat it for me."
         elif "Goodbye" in full_reply and len(full_reply.split()) < 10:
              full_reply = f"{full_reply} It has been a wonderful experience assisting you. I hope you have a fantastic day ahead!"
+
+        # ── 2. Queue TTS ─────────────────────────────────────────────────
+        is_audio = data.get("is_audio", True)
+        if is_audio and not _interrupt_flag.is_set():
+            # Pass the WHOLE reply to TTS at once.
+            # Strip all punctuation and extra whitespace for truly ZERO-GAP speech.
+            tts_text = re.sub(r'<[^>]+>', '', full_reply).strip()
+            # Remove all punctuation that causes pauses
+            for char in ".,!?;:-":
+                tts_text = tts_text.replace(char, "")
+            # Collapse extra spaces
+            tts_text = re.sub(r'\s+', ' ', tts_text).strip()
+            
+            if tts_text and len(tts_text.split()) > 1:
+                TTS_Queue.put(tts_text)
 
         duration_ms = max(2000, len(full_reply) * 60)
 
@@ -320,14 +407,31 @@ def interrupt():
     print("[WebMain] ⚡ Interrupt received")
     _interrupt_flag.set()
     set_stop_status("True")
+
+    # Flush the TTS queue
+    while not TTS_Queue.empty():
+        try: TTS_Queue.get_nowait()
+        except: break
+
+    # Kill any running PlayAudio.py processes
+    for proc in psutil.process_iter(['name', 'cmdline']):
+        try:
+            if proc.info.get('name') and 'python' in proc.info['name'].lower():
+                cmdline = proc.info.get('cmdline') or []
+                if any('PlayAudio.py' in part for part in cmdline):
+                    proc.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+    # We DON'T set StopStatus back to False here anymore. 
+    # Let the next speak request or the user reset it.
     return jsonify(status="interrupted"), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
     print(f"\n{'='*50}")
-    print(f"  Friday AI — Web Interface (Cloud Mode)")
-    print(f"  Running on port {port}")
+    print(f"  Friday AI — Web Interface")
+    print(f"  Open http://localhost:8000 in Chrome/Edge")
     print(f"{'='*50}\n")
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=8000, debug=False, threaded=True)

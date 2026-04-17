@@ -2425,3 +2425,88 @@ Supreame Leader Ayushman : So can you tell me detail?
 friday : Supreme Leader Ayushman, the US-Iran situation is complex, with a long history of tensions and conflicts. The US withdrew from the Joint Comprehensive Plan of Action (JCPOA) in 2018, reimposing sanctions on Iran, which led to a significant escalation of tensions. Iran responded by increasing its uranium enrichment, exceeding JCPOA limits, and seizing oil tankers. The US has maintained a strong military presence in the region, with aircraft carriers and troops deployed to the Middle East. Diplomatic efforts, including talks between the US and Iran, have been ongoing, with the US seeking to negotiate a new deal that addresses Iran's nuclear program, ballistic missiles, and regional activities. However, a resolution has not been reached, leaving the situation precarious and unpredictable, with the potential for further escalation.
 Supreame Leader Ayushman : Israel and lebanon ceasefire.
 friday : A significant development, Supreme Leader Ayushman. Israel and Lebanon have agreed to a 10-day ceasefire, as announced by the US, to allow for negotiations on a more permanent security and peace agreement. The truce aims to reduce tensions and violence between Israel and Iran-backed Hezbollah, with the US facilitating broader negotiations between the US and Iran. The ceasefire appears to be holding, with thousands of Lebanese attempting to return home, and Hezbollah politicians affirming a cautious commitment to the agreement.
+Supreame Leader Ayushman : Hey how are you friday how was your day?
+friday : I'm doing great, Supreme Leader Ayushman. It's wonderful to connect with you, and I'm always ready to assist and support you with high energy and a positive vibe.
+Supreame Leader Ayushman : Us and iran current situation.
+friday : Supreme Leader Ayushman, the US and Iran are in a state of cautious diplomacy, with the US maintaining a blockade on Iranian ports, despite Iran declaring the Strait of Hormuz "completely open" to all ships.
+Supreame Leader Ayushman : You tell it me in detail.
+friday : Supreme Leader Ayushman, I'd be happy to provide a detailed update on the current situation between the US and Iran. The relationship between the two nations remains complex and tense, with ongoing negotiations and developments. The US has been maintaining a blockade on Iranian ports, which has limited Iran's ability to export oil and import goods. In response, Iran has been attempting to increase its oil exports through various means, including using tankers to transport oil to other countries. 
+Recently, Iran declared the Strait of Hormuz, a critical waterway for international oil trade, "completely open" to all ships, which is seen as a significant development in the region. However, the US has continued to maintain its military presence in the region, with a carrier strike group and other naval assets deployed to the area. The US has also been working to build a coalition of nations to provide security for ships transiting the Strait of Hormuz, in an effort to counter Iran's growing influence in the region.
+Despite these tensions, there have been some signs of diplomatic progress between the US and Iran. The two nations have been engaged in indirect talks, with the US seeking to negotiate a new nuclear deal with Iran, and Iran seeking relief from sanctions and other economic pressures. The European Union has been playing a key role in facilitating these talks, and there have been reports of progress in recent weeks. However, the situation remains delicate, and it's unclear whether a breakthrough can be achieved in the near term.
+Furthermore, the US has been imposing sanctions on Iranian individuals and entities, citing concerns over Iran's nuclear program, ballistic missile activities, and support for terrorism. Iran has responded by imposing its own sanctions on US individuals and entities, and has also been seeking to increase its economic ties with other nations, including China and Russia. The situation is highly fluid, and it's likely that we'll see continued developments in the coming weeks and months, Supreme Leader Ayushman.
+Supreame Leader Ayushman : Hlo friday.
+friday : Hello Supreme Leader Ayushman, I'm here and ready to assist you with a big smile and lots of energy.
+Supreame Leader Ayushman : Hello friday.
+friday : Hi Supreme Leader Ayushman, it's great to connect with you, have an amazing day.
+Supreame Leader Ayushman : Who is narendra modi?
+friday : Narendra Modi is the Prime Minister of India, Supreme Leader Ayushman.
+Supreame Leader Ayushman : Current situation of us and iran.
+friday : The US and Iran are experiencing tense relations, Supreme Leader Ayushman, with sanctions and disagreements over the JCPOA.
+Supreame Leader Ayushman : Can you tell me the current?
+friday : The current can refer to electric current or a flow of charges, Supreme Leader Ayushman.
+Supreame Leader Ayushman : No no current relation of us and iran.
+friday : The US and Iran have strained relations, Supreme Leader Ayushman, with ongoing tensions and diplomatic challenges.
+Supreame Leader Ayushman : Can you tell me in detail?
+friday : The relationship between the US and Iran is complex and has been marked by tension and conflict for decades, Supreme Leader Ayushman. The two countries have had significant disagreements over issues such as Iran's nuclear program, with the US withdrawing from the Joint Comprehensive Plan of Action (JCPOA) in 2018 and reimposing sanctions on Iran. This led to a significant escalation of tensions, including the US drone strike that killed top Iranian military commander Qasem Soleimani in 2020. Since then, there have been ongoing diplomatic efforts to revive the JCPOA and ease tensions, but the relationship remains challenging. Additionally, the US has also imposed sanctions on Iran over its human rights record, support for militant groups, and ballistic missile program, further straining relations. The current US administration has taken a tough stance on Iran, while Iran has continued to develop its nuclear program and expand its regional influence, leading to a delicate and volatile situation.
+Supreame Leader Ayushman : Current relation like around straight of hormones are all.
+friday : The current relationship between the US and Iran is strained, with tensions high due to disagreements on various issues, Supreme Leader Ayushman.
+Supreame Leader Ayushman : Current israel and lebanon seas fire.
+friday : A 10-day ceasefire between Israel and Lebanon has gone into effect, Supreme Leader Ayushman, after being brokered by the US, with the Strait of Hormuz now "completely open" to all ships.
+Supreame Leader Ayushman : You friday.
+friday : Good morning, Supreme Leader Ayushman, it's Saturday, and I'm Friday, your energetic and respectful assistant, ready to help!
+Supreame Leader Ayushman : Bubble sort code.
+friday : Supreme Leader Ayushman, here's a brief Bubble Sort code: `for i in range(n): for j in range(n-i-1): if arr[j] > arr[j+1]: arr[j], arr[j+1] = arr[j+1], arr[j]`.
+Supreame Leader Ayushman : Bubble sort algorithm.
+friday : Supreme Leader Ayushman, the Bubble Sort algorithm works by repeatedly swapping adjacent elements if they're in the wrong order, until the list is sorted.
+Supreame Leader Ayushman : In copy paste format can you give me bubbles output?
+friday : Supreme Leader Ayushman, here's a Python implementation of Bubble Sort:
+```
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(n-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+    return arr
+arr = [64, 34, 25, 12, 22, 11, 90]
+print("Original array:", arr)
+print("Sorted array:", bubble_sort(arr))
+```
+Supreame Leader Ayushman : Can u expalin it line by line.
+friday : Supreme Leader Ayushman, I'd be happy to explain the Bubble Sort code line by line in a detailed manner.
+1. `def bubble_sort(arr):` - This line defines a function named `bubble_sort` that takes one argument, `arr`, which is the list of elements to be sorted.
+2. `n = len(arr)` - This line calculates the length of the input list `arr` and assigns it to the variable `n`.
+3. `for i in range(n):` - This line starts a loop that will iterate `n` times, where `n` is the length of the input list. This loop will control the number of passes through the list.
+4. `for j in range(n-i-1):` - This line starts a nested loop that will iterate from the first element to the `(n-i-1)`th element. The `-i` is used to reduce the number of comparisons in each pass, as the largest element will "bubble" to the end of the list in each pass.
+5. `if arr[j] > arr[j+1]:` - This line checks if the current element `arr[j]` is greater than the next element `arr[j+1]`. If this condition is true, it means the elements are in the wrong order.
+6. `arr[j], arr[j+1] = arr[j+1], arr[j]` - If the elements are in the wrong order, this line swaps them. This is the core of the Bubble Sort algorithm, where adjacent elements are swapped if they are in the wrong order.
+7. `return arr` - After the loops have completed, this line returns the sorted list.
+8. `arr = [64, 34, 25, 12, 22, 11, 90]` - This line creates a sample list of integers to be sorted.
+9. `print("Original array:", arr)` - This line prints the original, unsorted list.
+10. `print("Sorted array:", bubble_sort(arr))` - This line calls the `bubble_sort` function with the sample list as an argument and prints the sorted list.
+Here's a step-by-step example of how the Bubble Sort algorithm works on the sample list:
+- Original list: `[64, 34, 25, 12, 22, 11, 90]`
+- Pass 1: 
+  - Compare 64 and 34, swap: `[34, 64, 25, 12, 22, 11, 90]`
+  - Compare 64 and 25, swap: `[34, 25, 64, 12, 22, 11, 90]`
+  - Compare 64 and 12, swap: `[34, 25, 12, 64, 22, 11, 90]`
+  - Compare 64 and 22, swap: `[34, 25, 12, 22, 64, 11, 90]`
+  - Compare 64 and 11, swap: `[34, 25, 12, 22, 11, 64, 90]`
+  - Compare 64 and 90, no swap: `[34, 25, 12, 22, 11, 64, 90]`
+- Pass 2: 
+  - Compare 34 and 25, swap: `[25, 34, 12, 22, 11, 64, 90]`
+  - Compare 34 and 12, swap: `[25, 12, 34, 22, 11, 64, 90]`
+  - Compare 34 and 22, swap: `[25, 12, 22, 34, 11, 64, 90]`
+  - Compare 34 and 11, swap: `[25, 12, 22, 11, 34, 64, 90]`
+  - Compare 34 and 64, no swap: `[25, 12, 22, 11, 34, 64, 90]`
+- Pass 3: 
+  - Compare 25 and 12, swap: `[12, 25, 22, 11, 34, 64, 90]`
+  - Compare 25 and 22, swap: `[12, 22, 25, 11, 34, 64, 90]`
+  - Compare 25 and 11, swap: `[12, 22, 11, 25, 34, 64, 90]`
+  - Compare 25 and 34, no swap: `[12, 22, 11, 25, 34, 64, 90]`
+- Pass 4: 
+  - Compare 12 and 22, no swap: `[
+Supreame Leader Ayushman : Think about us and iran current situation.
+friday : Supreme Leader Ayushman, the current situation between the US and Iran is complex. According to recent reports, there have been efforts to improve relations, with Russia potentially playing a mediating role in negotiations. However, national unity in Iran has increased due to recent US and Israeli actions. Diplomacy is still an option, with some experts suggesting giving it a final chance.
+Supreame Leader Ayushman : Think about us and iran current situation.
+friday : Supreme Leader Ayushman, tensions between the US and Iran remain high, with ongoing disputes over nuclear programs, sanctions, and regional influence, requiring careful diplomacy to resolve.

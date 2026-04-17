@@ -1,13 +1,19 @@
 
 python-dotenv
 groq
-requests
+AppOpener
+pywhatkit
+bs4
+pillow
 rich
+requests
+keyboard
 cohere
 googlesearch-python
+selenium
 mtranslate
+pygame
 edge-tts
+PyQt5
+webdriver-manager
 duckduckgo-search
-pillow
-flask
-psutil
