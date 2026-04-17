@@ -44,6 +44,7 @@ tts_lock = threading.Lock()
 
 async def SaveAudio(text, file_path):
     try:
+        # Reverted rate to +22% as the user doesn't want Friday to speak fast, just shorter pauses.
         communicate = edge_tts.Communicate(text, AssistantVoice, rate="+22%", pitch="+0Hz")
         await communicate.save(file_path)
         return True
@@ -60,11 +61,16 @@ def TextToSpeech(Text):
         file_toggle = 1 - file_toggle
         current_file = os.path.join(data_dir, f"speech_{file_toggle}.mp3")
         
-        # Clean text: remove markdown symbols and extra spaces
-        clean_text = Text.replace("*", "").replace("#", "").replace("`", "").replace("assistant", "").replace("friday", "").strip()
+        # Aggressively clean text to minimize pauses
+        # Replace terminal punctuation with spaces or commas to keep the flow moving
+        clean_text = Text.replace("*", "").replace("#", "").replace("`", "")
+        clean_text = clean_text.replace("...", " ").replace("..", " ")
+        clean_text = clean_text.replace(". ", " ").replace("! ", " ").replace("? ", " ")
+        clean_text = clean_text.replace(",", " ")  # Commas also cause pauses
+        clean_text = clean_text.replace("assistant", "").replace("friday", "").strip()
         
         try:
-            # Generate Audio using a fresh event loop
+            # Generate Audio
             success = asyncio.run(SaveAudio(clean_text, current_file))
             if not success:
                 return

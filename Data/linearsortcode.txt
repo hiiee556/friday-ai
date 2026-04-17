@@ -1,0 +1,77 @@
+**Linear Sort Algorithm**
+==========================
+
+The linear sort algorithm, also known as counting sort, is a simple and efficient sorting algorithm for sorting arrays of integers. It works by counting the number of occurrences of each unique element in the array and then reconstructing the array in sorted order.
+
+**Code Implementation**
+----------------------
+
+Here is a Python implementation of the linear sort algorithm:
+```python
+def linear_sort(arr):
+    """
+    Sorts an array of integers using the linear sort algorithm.
+
+    Args:
+        arr (list): The input array to be sorted.
+
+    Returns:
+        list: The sorted array.
+    """
+    # Find the maximum element in the array
+    max_element = max(arr)
+
+    # Create a count array to store the count of each element
+    count_array = [0] * (max_element + 1)
+
+    # Count the occurrences of each element
+    for num in arr:
+        count_array[num] += 1
+
+    # Reconstruct the sorted array
+    sorted_arr = []
+    for i in range(len(count_array)):
+        sorted_arr.extend([i] * count_array[i])
+
+    return sorted_arr
+
+# Example usage
+arr = [4, 2, 2, 8, 3, 3, 1]
+print("Original array:", arr)
+print("Sorted array:", linear_sort(arr))
+```
+**Output**
+---------
+```
+Original array: [4, 2, 2, 8, 3, 3, 1]
+Sorted array: [1, 2, 2, 3, 3, 4, 8]
+```
+**Explanation**
+---------------
+
+1.  Find the maximum element in the input array `arr`.
+2.  Create a count array `count_array` of size `max_element + 1`, where each index represents a unique element in the input array.
+3.  Iterate through the input array and increment the corresponding count in the `count_array` for each element.
+4.  Reconstruct the sorted array by iterating through the `count_array` and appending each element to the `sorted_arr` a number of times equal to its count.
+
+**Time Complexity**
+------------------
+
+The time complexity of the linear sort algorithm is O(n + k), where n is the number of elements in the input array and k is the range of input (i.e., the maximum element in the array).
+
+**Space Complexity**
+-------------------
+
+The space complexity of the linear sort algorithm is O(n + k), as we need to store the count array and the sorted array.
+
+**Advantages**
+--------------
+
+*   The linear sort algorithm is simple to implement and understand.
+*   It is efficient for sorting arrays of integers with a small range of values.
+
+**Disadvantages**
+----------------
+
+*   The linear sort algorithm is not suitable for sorting arrays with a large range of values or non-integer values.
+*   It requires additional space to store the count array and the sorted array.

@@ -173,7 +173,7 @@ def serve_data(filename):
 @app.route("/poll_hotkey")
 def get_hotkey():
     try:
-        a_pressed = _original_is_pressed('a')
+        a_pressed = _original_is_pressed('caps lock')
         w_pressed = _original_is_pressed('w')
         # If 'w' is physically pressed off-screen, trigger interrupt globally format
         if w_pressed:
@@ -298,8 +298,8 @@ def speak():
             elif any(task.startswith(func) for func in ["close", "system", "reminder"]):
                 full_reply += f" (System task '{task.split()[0]}' is disabled in the web version to focus on your browser.) "
 
-            # ── Realtime search or general chat ──────────────────────────
-            elif "realtime" in task or "general" in task:
+            # ── Realtime search, general chat, or content (writing/code) ──────
+            elif any(tag in task for tag in ["realtime", "general", "content"]):
                 clean_query = task.replace("realtime", "").replace("general", "").replace("content", "").strip()
                 modified_query = QueryModifier(clean_query)
 
@@ -307,6 +307,7 @@ def speak():
                     print(f"[WebMain] → RealtimeSearchEngine: {modified_query}")
                     generator = RealtimeSearchEngine(modified_query)
                 else:
+                    # ChatBot handles both general and content/code
                     print(f"[WebMain] → ChatBot: {modified_query}")
                     generator = ChatBot(modified_query)
 
@@ -323,21 +324,54 @@ def speak():
                     if not answer:
                         answer = f"Sorry, I encountered an error: {e}"
 
-                full_reply += answer
+                # ── Format Code Blocks for the Web UI ──
+                # Convert ```lang ... ``` into a styled div with a copy button
+                def format_code_blocks(text):
+                    code_regex = re.compile(r'```(\w+)?\s*\n(.*?)\n```', re.DOTALL)
+                    
+                    def replace_code(match):
+                        lang = match.group(1) or "code"
+                        code = match.group(2).replace('<', '&lt;').replace('>', '&gt;')
+                        block_id = f"code-{int(time.time() * 1000)}"
+                        # Constructing HTML without leading indentation spaces to ensure proper alignment
+                        html = (
+                            f'<div class="code-container">'
+                            f'<div class="code-header">'
+                            f'<span>{lang}</span>'
+                            f'<button class="copy-btn" onclick="copyCode(this)">'
+                            f'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
+                            f' Copy</button></div>'
+                            f'<pre><code id="{block_id}">{code}</code></pre>'
+                            f'</div>'
+                        )
+                        return html
+                    
+                    # First, extract and format code blocks
+                    formatted_text = code_regex.sub(replace_code, text)
+                    
+                    # If it's NOT a code block, preserve line breaks for proper alignment
+                    # We split by our added tags to avoid double-processing the code content
+                    parts = re.split(r'(<div class="code-container">.*?</div>)', formatted_text, flags=re.DOTALL)
+                    final_parts = []
+                    for p in parts:
+                        if not p.startswith('<div class="code-container">'):
+                            # Process only the text parts
+                            final_parts.append(p.replace('\n', '<br>'))
+                        else:
+                            final_parts.append(p)
+                    
+                    return "".join(final_parts)
+
+                full_reply += format_code_blocks(answer)
 
             # ── Exit ─────────────────────────────────────────────────────
             elif "exit" in task:
                 full_reply += "Goodbye!"
 
-        if not full_reply or len(full_reply.split()) < 25:
-            if not full_reply:
-                full_reply = f"I am so sorry, {Username}, but I missed that! I would be absolutely delighted if you could repeat it so I can provide you with a detailed and cheerful response worthy of your time! "
-            elif "Goodbye" in full_reply:
-                full_reply = f"{full_reply} It has been a truly remarkable and wonderful experience assisting you today! I hope you have an exceptionally pleasant, bright, and productive day ahead, and I eagerly look forward to our next interaction whenever you need me. Goodbye for now, and take great care!"
-            else:
-                # APPEND instead of replace
-                expansion = f" I also want to mention that I am always here to support you with the utmost respect and energy, {Username}! My goal is to make sure you have the most detailed and helpful information possible. Is there any other aspect of this or another topic you'd like to explore in depth together?"
-                full_reply = full_reply.strip() + expansion
+        if not full_reply:
+            full_reply = f"I am so sorry, {Username}, but I missed that! I would be absolutely delighted if you could repeat it for me."
+        elif "Goodbye" in full_reply and len(full_reply.split()) < 10:
+             full_reply = f"{full_reply} It has been a wonderful experience assisting you. I hope you have a fantastic day ahead!"
 
         # ── 2. Queue TTS ─────────────────────────────────────────────────
         is_audio = data.get("is_audio", True)

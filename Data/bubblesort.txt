@@ -1,0 +1,62 @@
+**Bubble Sort: A Simple Sorting Algorithm**
+
+### Overview
+
+Bubble sort is a simple sorting algorithm that works by repeatedly iterating through a list of elements and swapping adjacent elements if they are in the wrong order. The algorithm continues until no more swaps are needed, indicating that the list is sorted.
+
+### Code
+
+```python
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n-1):
+        swapped = False
+        for j in range(n-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+                swapped = True
+        if not swapped:
+            break
+    return arr
+
+# Example usage:
+arr = [64, 34, 25, 12, 22, 11, 90]
+print("Original array:", arr)
+print("Sorted array:", bubble_sort(arr))
+```
+
+### Explanation
+
+The `bubble_sort` function takes a list of elements `arr` as input and returns the sorted list. The algorithm works by repeatedly iterating through the list and swapping adjacent elements if they are in the wrong order.
+
+**How it works:**
+
+1. The outer loop iterates `n-1` times, where `n` is the length of the list.
+2. The inner loop iterates `n-i-1` times, starting from the first element and moving towards the end of the list.
+3. Inside the inner loop, we compare each element with its adjacent element. If they are in the wrong order, we swap them.
+4. After each iteration of the inner loop, we check if any swaps were made. If no swaps were made, it means the list is already sorted and we can terminate the algorithm early.
+
+### Time Complexity
+
+The time complexity of the bubble sort algorithm is O(n^2) in the worst case, where n is the length of the list. However, if the list is already sorted, the algorithm terminates early and the time complexity is O(n).
+
+### Space Complexity
+
+The space complexity of the bubble sort algorithm is O(1) since we only use a small amount of additional memory to store the index variables.
+
+### Advantages and Disadvantages
+
+Advantages:
+
+* Simple to implement
+* In-place sorting (no extra memory required)
+* Can be used for small lists
+
+Disadvantages:
+
+* Time complexity is O(n^2) in the worst case, making it inefficient for large lists
+* Not suitable for sorting large datasets
+
+### Conclusion
+
+Bubble sort is a simple sorting algorithm that works by repeatedly iterating through a list of elements and swapping adjacent elements if they are in the wrong order. While it has its advantages, its time complexity makes it inefficient for large lists.

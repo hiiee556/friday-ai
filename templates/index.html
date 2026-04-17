@@ -98,13 +98,46 @@
     padding: 16px 20px; border-radius: 16px;
     border: 1px solid var(--border);
     line-height: 1.65; font-size: 0.96rem; font-weight: 300;
-    max-width: 78%;
+    max-width: 85%;
+    word-wrap: break-word;
   }
   .msg-row.ai  .bubble { background: var(--ai-bg); align-self: flex-start; }
   .msg-row.you .bubble {
     background: var(--you-bg); align-self: flex-end;
     border-color: rgba(124,108,245,0.2);
   }
+
+  /* ── Code Blocks ── */
+  .code-container {
+    margin: 15px 0; border: 1px solid var(--border);
+    border-radius: 12px; background: #011627; overflow: hidden;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+  .code-header {
+    background: rgba(255,255,255,0.07); padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); font-size: 0.78rem;
+    color: var(--muted); text-transform: uppercase; font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .copy-btn {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); padding: 5px 10px; border-radius: 6px;
+    font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .copy-btn:hover { 
+    background: var(--accent); border-color: var(--accent); 
+    color: #fff; transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--glow);
+  }
+  .code-container pre {
+    padding: 18px; margin: 0; overflow-x: auto;
+    font-size: 0.9rem; line-height: 1.6; color: #d6deeb;
+    white-space: pre; /* Essential for alignment */
+  }
+  .code-container code { background: none; padding: 0; font-family: inherit; }
   #interim-row { display: none; }
   #interim-row .bubble { opacity: 0.5; font-style: italic; border-style: dashed; }
 
@@ -232,7 +265,7 @@
   <div id="messages">
     <div class="msg-row ai">
       <span class="msg-label">Friday</span>
-      <div class="bubble">Hey! I'm Friday, your AI assistant. Hold <strong>A</strong> to speak or type below. What can I help you with?</div>
+      <div class="bubble">Hey! I'm Friday, your AI assistant. Hold <strong>Caps Lock</strong> to speak or type below. What can I help you with?</div>
     </div>
     <div class="msg-row you" id="interim-row">
       <span class="msg-label">You</span>
@@ -266,9 +299,9 @@
       </svg>
     </div>
     <div class="key-hints">
-      <div class="hint"><span class="key" id="key-a">A</span><span>Hold to speak</span></div>
+      <div class="hint"><span class="key" id="key-a" style="width:auto;padding:0 8px;font-size:0.65rem;">CAPS</span><span>Hold to speak</span></div>
     </div>
-    <div id="status">Hold <strong>A</strong> or Tap Mic to speak</div>
+    <div id="status">Hold <strong>Caps Lock</strong> or Tap Mic to speak</div>
   </div>
 
 </div>
@@ -279,6 +312,23 @@
 // ══════════════════════════════════════════
 const SPEAK_URL     = '/speak';
 const INTERRUPT_URL = '/interrupt';
+
+// ── Copy Functionality ──
+function copyCode(btn) {
+  const codeEl = btn.parentElement.nextElementSibling.querySelector('code');
+  const text = codeEl.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+    btn.style.borderColor = 'var(--accent2)';
+    btn.style.color = 'var(--accent2)';
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2000);
+  });
+}
 // ══════════════════════════════════════════
 
 const messagesEl  = document.getElementById('messages');
@@ -429,7 +479,7 @@ function stopListening(send = true) {
     addBubble('you', text);
     sendToBackend(text, true); // true = audio input
   } else {
-    setStatus('Hold <strong>A</strong> or Tap Mic to speak', '');
+    setStatus('Hold <strong>Caps Lock</strong> or Tap Mic to speak', '');
   }
 }
 
@@ -492,7 +542,7 @@ function finishSpeaking() {
   clearTimeout(speakTimer);
   aiSpeaking = false;
   orbEl.className = '';
-  setStatus('Hold <strong>A</strong> or Tap Mic to speak', '');
+  setStatus('Hold <strong>Caps Lock</strong> or Tap Mic to speak', '');
 }
 
 async function doInterrupt() {
@@ -555,13 +605,13 @@ document.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.target === textInput) return; // Don't capture A/W when typing
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.code === 'KeyA') { aKeyDown = true; startListening(); }
+  if (e.code === 'CapsLock') { e.preventDefault(); aKeyDown = true; startListening(); }
   if (e.code === 'KeyW') { doInterrupt(); }
 });
 
 document.addEventListener('keyup', e => {
   if (e.target === textInput) return;
-  if (e.code === 'KeyA') { aKeyDown = false; stopListening(true); }
+  if (e.code === 'CapsLock') { e.preventDefault(); aKeyDown = false; stopListening(true); }
   if (e.code === 'KeyW') { keyW.classList.remove('active-w'); }
 });
 

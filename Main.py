@@ -192,7 +192,8 @@ def MainExecution():
                         sleep(0.01) # FAST REPLIES
                     
                     if any(term in unspoken_buffer for term in ['.', '!', '?', '\n']):
-                        if len(unspoken_buffer) > 30: # Even faster speech (lowered from 40/120)
+                        if len(unspoken_buffer) > 180: # Aggressive buffer to remove sentence gaps
+                            # Split by punctuation
                             parts = re.split(r'(?<=[.!?])[\s\n]+', unspoken_buffer, maxsplit=1)
                             if len(parts) > 1:
                                 sentence_to_speak = parts[0].strip()
@@ -201,7 +202,7 @@ def MainExecution():
                                 unspoken_buffer = parts[1]
                 
                 if unspoken_buffer.strip() and GetStopStatus() == "False":
-                    clean_final = unspoken_buffer.strip().rstrip('.,!?')
+                    clean_final = unspoken_buffer.strip()
                     TTS_Queue.put(clean_final)
                 
                 Answer = full_response

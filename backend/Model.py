@@ -37,7 +37,7 @@ Your ONLY task is to categorize the user's query into one or more categories.
 -> 'close (app)': To close applications.
 -> 'play (song)': To play music on YouTube.
 -> 'generate image (prompt)': To create images.
--> 'system (task)': For mute, unmute, volume up/down.
+-> 'system (task)': For mute, unmute, volume up/down, wifi on/off, airplane mode on/off, battery saver on/off, night light on/off.
 -> 'google search (topic)': For manual Google searches.
 -> 'youtube search (topic)': For manual YouTube search.
 
@@ -69,7 +69,15 @@ ChatHistory = [
     {"role": "User", "message": "who is elon musk?"},
     {"role": "Chatbot", "message": "realtime who is elon musk?"},
     {"role": "User", "message": "write a leave application for school"},
-    {"role": "Chatbot", "message": "content write a leave application for school"}
+    {"role": "Chatbot", "message": "content write a leave application for school"},
+    {"role": "User", "message": "turn on the wifi"},
+    {"role": "Chatbot", "message": "system wifi on"},
+    {"role": "User", "message": "turn off airplane mode"},
+    {"role": "Chatbot", "message": "system airplane mode off"},
+    {"role": "User", "message": "enable battery saver"},
+    {"role": "Chatbot", "message": "system battery saver on"},
+    {"role": "User", "message": "turn on night light"},
+    {"role": "Chatbot", "message": "system night light on"}
 ]
 
 # Define the main function for decision-making on queries.

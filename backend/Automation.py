@@ -427,6 +427,34 @@ def System(command):
     def volume_down():
         keyboard.press_and_release("volume down")
 
+    def wifi_on():
+        subprocess.run('netsh interface set interface "Wi-Fi" admin=enabled', shell=True)
+
+    def wifi_off():
+        subprocess.run('netsh interface set interface "Wi-Fi" admin=disabled', shell=True)
+
+    def airplane_on():
+        subprocess.run('start ms-settings:network-airplanemode', shell=True)
+
+    def airplane_off():
+        subprocess.run('start ms-settings:network-airplanemode', shell=True)
+
+    def battery_saver_on():
+        subprocess.run('powercfg /setdcvalueindex SCHEME_CURRENT SUB_ENERGYSAVER ES_ON_OFF 1', shell=True)
+        subprocess.run('powercfg /setactive SCHEME_CURRENT', shell=True)
+        subprocess.run('start ms-settings:batterysaver', shell=True)
+
+    def battery_saver_off():
+        subprocess.run('powercfg /setdcvalueindex SCHEME_CURRENT SUB_ENERGYSAVER ES_ON_OFF 0', shell=True)
+        subprocess.run('powercfg /setactive SCHEME_CURRENT', shell=True)
+        subprocess.run('start ms-settings:batterysaver', shell=True)
+
+    def night_light_on():
+        subprocess.run('start ms-settings:nightlight', shell=True)
+
+    def night_light_off():
+        subprocess.run('start ms-settings:nightlight', shell=True)
+
     cmd = command.lower().strip()
     if cmd == "mute":
         mute()
@@ -436,6 +464,22 @@ def System(command):
         volume_up()
     elif cmd in ("volume down", "volumedown"):
         volume_down()
+    elif "wifi on" in cmd:
+        wifi_on()
+    elif "wifi off" in cmd:
+        wifi_off()
+    elif "airplane mode on" in cmd:
+        airplane_on()
+    elif "airplane mode off" in cmd:
+        airplane_off()
+    elif "battery saver on" in cmd:
+        battery_saver_on()
+    elif "battery saver off" in cmd:
+        battery_saver_off()
+    elif "night light on" in cmd:
+        night_light_on()
+    elif "night light off" in cmd:
+        night_light_off()
 
     return True
 

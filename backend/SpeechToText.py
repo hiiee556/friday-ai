@@ -84,17 +84,17 @@ def SpeechRecognition():
     if driver.current_url != f"file:///{current_dir.replace(os.sep, '/')}/DataVoice.html":
         driver.get(f"file:///{current_dir}/DataVoice.html")
     
-    SetAssistantStatus("Hold 'A' to Speak")
+    SetAssistantStatus("Hold 'Caps Lock' to Speak")
     
     # Wait for 'A' key
-    while not keyboard.is_pressed('a'):
+    while not keyboard.is_pressed('caps lock'):
         time.sleep(0.01)
         
     SetAssistantStatus("Listening...")
     driver.find_element(By.ID, "start").click()
     
     # Wait for 'A' release
-    while keyboard.is_pressed('a'):
+    while keyboard.is_pressed('caps lock'):
         time.sleep(0.01)
         
     driver.find_element(By.ID, "end").click()
