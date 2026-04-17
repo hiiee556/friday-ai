@@ -9,3 +9,4 @@ mtranslate
 edge-tts
 duckduckgo-search
 pillow
+flask
